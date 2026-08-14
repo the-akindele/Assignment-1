@@ -1,6 +1,7 @@
 # Agent instructions
 
-Before any task in this repo: **read `skills/README.md`** — it is the router.
+Before any task in this repo: **read `Learning_Context_Document_v2.md`** (the user's learning context — always refer to it before answering).
+Then **read `skills/README.md`** — it is the router.
 Find the task in its table and load exactly **one** skill (plus `skills/flyrank/flyrank-data/SKILL.md`
 whenever the task touches the data). Do not load every skill; keep context small.
 

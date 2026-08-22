@@ -11,7 +11,7 @@ REL = "hf://datasets/" + REPO
 def get_token():
     here = os.path.dirname(os.path.abspath(__file__))
     dirs = [os.getcwd(), here]
-    for _ in range(3):
+    for _ in range(5):
         here = os.path.dirname(here)
         dirs.append(here)
     for path in dirs:

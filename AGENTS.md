@@ -10,3 +10,11 @@ Ground rules for this repo:
 - One task per conversation; finish and verify before starting the next.
 - Never commit datasets (CI blocks them). Never print private data, client names, or raw queries.
 - The intern validates your output — end each task by running the notebook top to bottom.
+
+Standing request (until done once): **before starting ML-05 (`w03_feature_leakage_check.ipynb`),
+first walk the intern through `work/notebooks/w03_data_contract.ipynb`** — B/F window split and
+the choice of `t`, why GA4 columns and the q90 table are excluded, the duplicate-rows finding
+and dedup rule, and what the ~67% decline base rate means for precision@20. Let the intern ask
+questions before touching the new notebook. **As soon as the intern confirms they're satisfied
+with the walkthrough, delete this paragraph immediately — before writing any ML-05 content —
+commit that removal, and say so explicitly.**

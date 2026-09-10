@@ -51,7 +51,7 @@
   .stat span{font-size:12.5px;color:var(--muted);line-height:1.4;display:block;margin-top:5px}
   /* ---------- abstract ---------- */
   .abstract{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0;padding:20px 24px;margin:6px 0 8px}
-  .abstract h2{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-deep);margin:0 0 10px;font-weight:600}
+  .abstract h2,.abstract-label{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-deep);margin:0 0 10px;font-weight:600;display:block}
   .abstract p{margin:0;font-size:17.5px;font-family:Georgia,"Palatino Linotype","Times New Roman",serif}
   /* ---------- headings ---------- */
   h2.sec{font-size:25px;margin:56px 0 0;padding-top:8px;font-weight:600;letter-spacing:-.01em;border-bottom:1px solid var(--line);padding-bottom:10px;display:flex;align-items:baseline;gap:12px}
@@ -124,7 +124,7 @@
       <a class="btn" href="https://github.com/the-akindele/Assignment-1" target="_blank" rel="noopener">Repository</a>
       <a class="btn" href="https://github.com/the-akindele/Assignment-1/tree/main/work/notebooks" target="_blank" rel="noopener">Notebooks</a>
       <a class="btn" href="https://huggingface.co/datasets/FlyRank/internship-warehouse" target="_blank" rel="noopener">Data (gated)</a>
-      <a class="btn" href="#reproducibility">How to rerun</a>
+      <a class="btn" href="#s8">How to rerun</a>
     </div>
   </div>
 </header>
@@ -155,7 +155,7 @@
 
   <h2 class="sec" id="s1"><span class="n">1</span>Abstract</h2>
   <div class="abstract">
-    <h2>Abstract</h2>
+    <span class="abstract-label">Abstract</span>
     <p>Which pages should a content editor review first when the goal is to keep high-traffic content from losing search impressions?
     On the FlyRank ML Internship dataset — 78.8 million rows of daily content-performance data across a pseudonymized portfolio, reduced to a single 30-day decision snapshot of 108,254 eligible pages — I labeled pages that lost more than 20% of their baseline impressions over the following 30 days (base rate 67%).
     I built a transparent rule-based baseline (has traffic, is old, position slipping), a logistic regression, and a random forest, and evaluated all three on a client-held-out five-fold split using only features knowable at the decision date, with deliberate leakage probes.

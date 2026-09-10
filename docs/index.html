@@ -7,91 +7,106 @@
 <meta name="description" content="A public research paper ranking content-refresh priorities on the FlyRank ML Internship dataset (78.8M rows). Transparent baseline vs learned model on a client-held-out split, with leakage checks and honest claims.">
 <style>
   :root{
-    --ink:#1b2430; --muted:#5b6772; --line:#e3e7ec; --paper:#ffffff;
-    --accent:#0f5fa8; --accent-soft:#eaf2fa; --hl:#f7b733;
-    --base-gray:#8a9199;
+    --ink:#241c33; --muted:#655d74; --line:#e8e0f3; --paper:#fffdfe;
+    --accent:#6b3ea8; --accent-deep:#4a2678; --accent-soft:#f4eefb; --accent-tint:#faf7ff;
+    --gold:#b8912f; --hero-1:#221636; --hero-2:#43266e; --hero-3:#5a3391;
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{
     margin:0; color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    line-height:1.6; background:#f6f7f9; font-size:17px;-webkit-font-smoothing:antialiased;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    line-height:1.65; background:#f5f2f9; font-size:17px;-webkit-font-smoothing:antialiased;
   }
-  main{max-width:860px;margin:0 auto;padding:0 20px 80px}
+  main{max-width:880px;margin:0 auto;padding:0 20px 80px}
+  h1,h2,h3,.serif{font-family:Georgia,"Iowan Old Style","Palatino Linotype","Times New Roman",serif}
   /* ---------- hero ---------- */
-  header.hero{background:linear-gradient(180deg,#12314f,#0f5fa8);color:#fff;padding:64px 0 56px;margin-bottom:8px}
-  header.hero .inner{max-width:860px;margin:0 auto;padding:0 20px}
-  .eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;opacity:.82;margin:0 0 14px;font-weight:600}
-  h1{font-size:clamp(28px,4.6vw,40px);line-height:1.18;margin:0 0 18px;font-weight:800;max-width:20ch}
-  .subtitle{font-size:19px;opacity:.92;max-width:64ch;margin:0 0 22px;line-height:1.5}
-  .byline{font-size:15px;opacity:.85;margin:0 0 26px}
-  .byline a{color:#fff;text-decoration:underline;text-underline-offset:3px}
+  header.hero{
+    color:#fff;padding:72px 0 60px;margin-bottom:8px;position:relative;
+    background:
+      radial-gradient(900px 420px at 82% -10%, rgba(184,145,47,.16), transparent 60%),
+      radial-gradient(760px 520px at 8% 110%, rgba(107,62,168,.42), transparent 62%),
+      linear-gradient(205deg,var(--hero-1) 0%,var(--hero-2) 52%,var(--hero-3) 100%);
+  }
+  header.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;
+    background:linear-gradient(90deg,transparent,var(--gold) 50%,transparent);opacity:.85}
+  header.hero .inner{max-width:880px;margin:0 auto;padding:0 20px}
+  .eyebrow{font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;opacity:.78;margin:0 0 18px;font-weight:600;color:#d9c9f2}
+  h1{font-size:clamp(30px,4.8vw,44px);line-height:1.16;margin:0 0 20px;font-weight:600;letter-spacing:-.01em;max-width:22ch}
+  .subtitle{font-size:19px;opacity:.9;max-width:66ch;margin:0 0 24px;line-height:1.55}
+  .byline{font-size:15px;opacity:.82;margin:0 0 28px}
+  .byline a{color:#fff;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.5)}
   .links{display:flex;flex-wrap:wrap;gap:10px}
-  .btn{display:inline-block;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.45);
-       color:#fff;text-decoration:none;padding:9px 16px;border-radius:8px;font-size:14px;font-weight:600}
-  .btn:hover{background:rgba(255,255,255,.26)}
-  /* ---------- layout ---------- */
-  .paper{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:44px 48px;margin-top:-14px;box-shadow:0 6px 24px rgba(20,40,70,.07)}
-  @media (max-width:640px){ .paper{padding:28px 22px} }
-  /* ---------- abstract ---------- */
-  .abstract{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0;padding:18px 22px;margin:6px 0 8px}
-  .abstract h2{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 8px}
-  .abstract p{margin:0;font-size:17px}
+  .btn{display:inline-block;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.4);
+       color:#fff;text-decoration:none;padding:9px 16px;border-radius:6px;font-size:14px;font-weight:600;letter-spacing:.01em}
+  .btn:hover{background:rgba(255,255,255,.2)}
+  /* ---------- paper ---------- */
+  .paper{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:48px 52px;margin-top:-14px;box-shadow:0 10px 34px rgba(42,26,74,.10)}
+  @media (max-width:640px){ .paper{padding:30px 22px} }
   /* ---------- stat cards ---------- */
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:26px 0 10px}
   @media (max-width:640px){ .stats{grid-template-columns:repeat(2,1fr)} }
-  .stat{background:#fbfcfe;border:1px solid var(--line);border-radius:8px;padding:14px 16px;text-align:center}
-  .stat b{display:block;font-size:22px;color:var(--accent);font-weight:800;line-height:1.2}
-  .stat span{font-size:12.5px;color:var(--muted);line-height:1.35;display:block;margin-top:4px}
+  .stat{background:var(--accent-tint);border:1px solid var(--line);border-radius:8px;padding:16px 16px 15px;text-align:center;border-top:2px solid var(--gold)}
+  .stat b{display:block;font-size:23px;color:var(--accent-deep);font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+  .stat span{font-size:12.5px;color:var(--muted);line-height:1.4;display:block;margin-top:5px}
+  /* ---------- abstract ---------- */
+  .abstract{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0;padding:20px 24px;margin:6px 0 8px}
+  .abstract h2{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-deep);margin:0 0 10px;font-weight:600}
+  .abstract p{margin:0;font-size:17.5px;font-family:Georgia,"Palatino Linotype","Times New Roman",serif}
   /* ---------- headings ---------- */
-  h2.sec{font-size:24px;margin:52px 0 4px;padding-top:8px;font-weight:800;letter-spacing:-.01em}
-  h2.sec .n{color:var(--accent);margin-right:9px}
-  h3{font-size:19px;margin:30px 0 8px;font-weight:700}
+  h2.sec{font-size:25px;margin:56px 0 0;padding-top:8px;font-weight:600;letter-spacing:-.01em;border-bottom:1px solid var(--line);padding-bottom:10px;display:flex;align-items:baseline;gap:12px}
+  h2.sec .n{color:var(--accent);font-style:italic;font-weight:500}
+  h2.sec:after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--gold),transparent);opacity:.65;align-self:center}
+  h3{font-size:20px;margin:32px 0 8px;font-weight:600}
   p{margin:12px 0}
-  .lede{color:var(--muted);font-size:15px;margin:2px 0 18px}
+  .lede{color:var(--muted);font-size:15px;margin:2px 0 20px}
   ul,ol{margin:10px 0;padding-left:24px}
   li{margin:7px 0}
   strong{color:var(--ink)}
-  a{color:var(--accent)}
+  a{color:var(--accent-deep)}
   /* ---------- toc ---------- */
-  .toc{background:#f4f7fb;border:1px solid var(--line);border-radius:8px;padding:16px 20px;margin:10px 0 4px;font-size:14.5px}
-  .toc b{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-  .toc ol{margin:8px 0 0;padding-left:20px}
+  .toc{background:var(--accent-tint);border:1px solid var(--line);border-radius:8px;padding:16px 22px;margin:10px 0 4px;font-size:14.5px}
+  .toc b{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent-deep)}
+  .toc ol{margin:8px 0 0;padding-left:22px}
   .toc a{text-decoration:none}
+  .toc a:hover{text-decoration:underline}
   /* ---------- figures ---------- */
-  figure{margin:30px 0;text-align:center}
-  figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
-  figcaption{color:var(--muted);font-size:14px;margin-top:10px;text-align:left;line-height:1.5}
-  figcaption .takeaway{display:block;margin-top:5px;color:var(--ink);font-size:14px}
-  figcaption .takeaway::before{content:"Takeaway — ";font-weight:700;color:var(--accent)}
+  figure{margin:32px 0;text-align:center}
+  figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;background:#fff}
+  figcaption{color:var(--muted);font-size:14px;margin-top:10px;text-align:left;line-height:1.55}
+  figcaption strong{color:var(--accent-deep)}
+  figcaption .takeaway{display:block;margin-top:6px;color:var(--ink);font-size:14px}
+  figcaption .takeaway::before{content:"Takeaway — ";font-weight:700;color:var(--accent-deep)}
   /* ---------- tables ---------- */
   .tablewrap{overflow-x:auto;margin:22px 0}
   table{border-collapse:collapse;width:100%;font-size:15px}
   caption{caption-side:top;text-align:left;font-size:14px;color:var(--muted);margin-bottom:8px;padding:0}
   th,td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
-  th{background:#f4f7fb;font-weight:700;white-space:nowrap}
+  th{background:var(--accent-soft);font-weight:600;white-space:nowrap;color:var(--accent-deep)}
   td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   tr:last-child td{border-bottom:none}
-  .hl-row{background:#f7fbfe}
+  .hl-row{background:var(--accent-tint)}
   .foot{margin-top:8px;font-size:13.5px;color:var(--muted)}
   /* ---------- callouts ---------- */
-  .callout{border:1px solid var(--line);border-left:4px solid var(--hl);background:#fffdf6;border-radius:0 8px 8px 0;padding:16px 20px;margin:22px 0}
-  .callout code{background:#f0f1f3;padding:1px 6px;border-radius:4px;font-size:.9em}
+  .verdict{background:linear-gradient(205deg,var(--hero-1),var(--hero-2));color:#efe8fa;border-radius:10px;padding:22px 26px;margin:26px 0}
+  .verdict::before{content:"The one sentence that carries the whole paper.";display:block;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:8px}
+  .verdict p{margin:0;font-size:17px;line-height:1.6;color:#f6f1fd}
+  .callout{border:1px solid var(--line);border-left:4px solid var(--gold);background:#fdfaf0;border-radius:0 8px 8px 0;padding:16px 20px;margin:22px 0}
+  .callout code{background:#f0eede;padding:1px 6px;border-radius:4px;font-size:.88em}
   kbd,code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace}
   /* ---------- definition boxes ---------- */
   .def{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;margin:16px 0;overflow:hidden}
   .def div{padding:14px 20px;flex:1 1 320px}
-  .def .k{background:#f4f7fb;flex:0 1 260px;font-size:14px}
-  .def .k b{font-size:15px}
+  .def .k{background:var(--accent-soft);flex:0 1 260px;font-size:14px}
+  .def .k b{font-size:15px;color:var(--accent-deep)}
   .def .k code{font-size:13px}
   .def .v{background:#fff}
   .def .v p{margin:2px 0}
   /* ---------- footer ---------- */
-  footer{max-width:860px;margin:36px auto 60px;padding:0 20px}
+  footer{max-width:880px;margin:36px auto 60px;padding:0 20px}
   .credit{border-top:1px solid var(--line);padding-top:18px;font-size:14.5px;color:var(--muted)}
   .credit p{margin:6px 0}
-  ::selection{background:#cfe3f5}
+  ::selection{background:#e3d6f7}
   .note{font-size:13.5px;color:var(--muted);font-style:italic}
 </style>
 </head>
@@ -108,7 +123,7 @@
       <a class="btn" href="https://github.com/the-akindele/Assignment-1" target="_blank" rel="noopener">Repository</a>
       <a class="btn" href="https://github.com/the-akindele/Assignment-1/tree/main/work/notebooks" target="_blank" rel="noopener">Notebooks</a>
       <a class="btn" href="https://huggingface.co/datasets/FlyRank/internship-warehouse" target="_blank" rel="noopener">Data (gated)</a>
-      <a class="btn" href="#reproducibility" target="_blank">How to rerun</a>
+      <a class="btn" href="#reproducibility">How to rerun</a>
     </div>
   </div>
 </header>
@@ -162,10 +177,10 @@
   search position, its age and freshness, its content descriptors — and we can measure, on a held-out set, how often "ranked first" really means "declined next window".
   That measurement is the whole paper.</p>
 
-  <p>The narrative arc is honest, and worth stating up front. The obvious move is to train a model on everything you know about a page. But when the model
-  is judged the way the editor actually uses the output — by how the <em>top of the ranked list</em> performs, on clients it was never trained on — the
-  transparent three-condition rule beats it. And it is almost trivially easy to fool yourself: one future-window feature, or one naive random split, turns
-  a modest model into a 0.99-AUC "miracle". The tension this paper lives in is that gap between what feels brilliant and what survives.</p>
+  <p>The honest version, up front. The obvious move is to train a model on everything known about a page. Judged the way the editor actually uses the
+  output — by how the <em>top of the ranked list</em> performs, on clients the model never trained on — the transparent three-condition rule beats it.
+  And two easy mistakes can fool anyone here: a naive random split inflates a modest model to ~0.79 AUC, and one future-window feature inflates it to ~0.99.
+  The gap between those flattering numbers and what survives is the whole point of this paper.</p>
 
   <h2 class="sec" id="s3"><span class="n">3</span>Data</h2>
   <p class="lede">Which release, which tables, date windows, and what I excluded and why. Everything here is public-safe: no client names, URLs, titles, domains, or raw queries appear anywhere in this work.</p>
@@ -355,8 +370,8 @@
     <caption>Ranked-queue precision@K, full eligible population (12,930 pages flagged) — in-sample. The held-out numbers are Figure 2.</caption>
     <thead><tr><th class="num">K</th><th class="num">10</th><th class="num">20</th><th class="num">50</th><th class="num">100</th><th class="num">200</th><th class="num">500</th></tr></thead>
     <tbody>
-      <tr><td>Precision (rule)</td><td class="num">0.85</td><td class="num">0.85</td><td class="num">0.78</td><td class="num">0.81</td><td class="num">0.78</td><td class="num">0.77</td></tr>
-      <tr><td>vs base rate 0.674</td><td class="num">1.26×</td><td class="num">1.26×</td><td class="num">1.16×</td><td class="num">1.20×</td><td class="num">1.15×</td><td class="num">1.14×</td></tr>
+      <tr><td>Precision (rule)</td><td class="num">0.80</td><td class="num">0.85</td><td class="num">0.78</td><td class="num">0.81</td><td class="num">0.775</td><td class="num">0.80</td></tr>
+      <tr><td>vs base rate 0.674</td><td class="num">1.19×</td><td class="num">1.26×</td><td class="num">1.16×</td><td class="num">1.20×</td><td class="num">1.15×</td><td class="num">1.19×</td></tr>
     </tbody>
   </table>
   </div>
@@ -365,15 +380,15 @@
     <img src="charts/playbook_precision_at_k.png" alt="Line chart: ranked-queue precision at K from 10 to 500 for the readable rule, versus the 0.67 base rate line.">
     <figcaption>
       <strong>Figure 4.</strong> Ranked-queue precision@K vs base rate (rule, full eligible population; 12,930 flagged pages).
-      <span class="takeaway">Consistent ~1.14–1.26× lift over the 67% base rate across K — the rule concentrates decline-association in the top of the queue.</span>
+      <span class="takeaway">A consistent ~1.15–1.26× lift over the 67% base rate across K — the rule concentrates decline-association in the top of the queue.</span>
     </figcaption>
   </figure>
 
   <figure>
-    <img src="charts/playbook_reason_codes.png" alt="Bar chart: pages flagged by reason code for the ranked refresh queue.">
+    <img src="charts/playbook_reason_codes.png" alt="Horizontal bar chart: how many pages carry each reason code, across the full 108,254 eligible pages.">
     <figcaption>
-      <strong>Figure 5.</strong> What the rule flags, by reason code (ranked queue, score &gt; 0).
-      <span class="takeaway">Nearly every flagged page is "traffic + old + off page 1" — the reason string is the machine-readable twin of the plain-language recommendation.</span>
+      <strong>Figure 5.</strong> Why pages enter the ranked queue, by reason code (full eligible population, 108,254 pages; top 5 of the underlying pattern).
+      <span class="takeaway">Five reason patterns cover ~77% of the population — traffic, age, and position-slip combined drive nearly every queue entry, and each flag carries its readable reason string.</span>
     </figcaption>
   </figure>
 
@@ -392,11 +407,11 @@
     <li><strong>No per-client calibration, no real-time retraining</strong> — this is a frozen, auditable artifact, deliberately not a live score in production.</li>
   </ul>
 
-  <div class="callout">
-    <strong>The one sentence that carries the whole paper.</strong> On a client-grouped holdout, the rule and the random forest <em>rank</em> likely-decliners at
+  <div class="verdict">
+    <p>On a client-grouped holdout, the rule and the random forest <em>rank</em> likely-decliners at
     precision@20 0.73 / 0.70 against a 0.67 base rate (AUC ~0.61); in this snapshot, pages off page one and pages in the 6–12 month age band <em>showed</em>
     higher decline; these pages therefore <em>look worth an editor reviewing first</em>. Observed, measured, and decision-support. Nothing here was designed to prove
-    that editing a page improves its ranking, and it does not.
+    that editing a page improves its ranking, and it does not.</p>
   </div>
 
   <h2 class="sec" id="s7"><span class="n">7</span>Ranked recommendations — the action playbook</h2>

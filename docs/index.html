@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Which Pages Should a Content Team Refresh First? — A Leakage-Audited Ranking on 78.8M Rows of Search Data</title>
+<meta name="description" content="A public research paper ranking content-refresh priorities on the FlyRank ML Internship dataset (78.8M rows). Transparent baseline vs learned model on a client-held-out split, with leakage checks and honest claims.">
+<style>
+  :root{
+    --ink:#1b2430; --muted:#5b6772; --line:#e3e7ec; --paper:#ffffff;
+    --accent:#0f5fa8; --accent-soft:#eaf2fa; --hl:#f7b733;
+    --base-gray:#8a9199;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6; background:#f6f7f9; font-size:17px;-webkit-font-smoothing:antialiased;
+  }
+  main{max-width:860px;margin:0 auto;padding:0 20px 80px}
+  /* ---------- hero ---------- */
+  header.hero{background:linear-gradient(180deg,#12314f,#0f5fa8);color:#fff;padding:64px 0 56px;margin-bottom:8px}
+  header.hero .inner{max-width:860px;margin:0 auto;padding:0 20px}
+  .eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;opacity:.82;margin:0 0 14px;font-weight:600}
+  h1{font-size:clamp(28px,4.6vw,40px);line-height:1.18;margin:0 0 18px;font-weight:800;max-width:20ch}
+  .subtitle{font-size:19px;opacity:.92;max-width:64ch;margin:0 0 22px;line-height:1.5}
+  .byline{font-size:15px;opacity:.85;margin:0 0 26px}
+  .byline a{color:#fff;text-decoration:underline;text-underline-offset:3px}
+  .links{display:flex;flex-wrap:wrap;gap:10px}
+  .btn{display:inline-block;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.45);
+       color:#fff;text-decoration:none;padding:9px 16px;border-radius:8px;font-size:14px;font-weight:600}
+  .btn:hover{background:rgba(255,255,255,.26)}
+  /* ---------- layout ---------- */
+  .paper{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:44px 48px;margin-top:-14px;box-shadow:0 6px 24px rgba(20,40,70,.07)}
+  @media (max-width:640px){ .paper{padding:28px 22px} }
+  /* ---------- abstract ---------- */
+  .abstract{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0;padding:18px 22px;margin:6px 0 8px}
+  .abstract h2{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 8px}
+  .abstract p{margin:0;font-size:17px}
+  /* ---------- stat cards ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:26px 0 10px}
+  @media (max-width:640px){ .stats{grid-template-columns:repeat(2,1fr)} }
+  .stat{background:#fbfcfe;border:1px solid var(--line);border-radius:8px;padding:14px 16px;text-align:center}
+  .stat b{display:block;font-size:22px;color:var(--accent);font-weight:800;line-height:1.2}
+  .stat span{font-size:12.5px;color:var(--muted);line-height:1.35;display:block;margin-top:4px}
+  /* ---------- headings ---------- */
+  h2.sec{font-size:24px;margin:52px 0 4px;padding-top:8px;font-weight:800;letter-spacing:-.01em}
+  h2.sec .n{color:var(--accent);margin-right:9px}
+  h3{font-size:19px;margin:30px 0 8px;font-weight:700}
+  p{margin:12px 0}
+  .lede{color:var(--muted);font-size:15px;margin:2px 0 18px}
+  ul,ol{margin:10px 0;padding-left:24px}
+  li{margin:7px 0}
+  strong{color:var(--ink)}
+  a{color:var(--accent)}
+  /* ---------- toc ---------- */
+  .toc{background:#f4f7fb;border:1px solid var(--line);border-radius:8px;padding:16px 20px;margin:10px 0 4px;font-size:14.5px}
+  .toc b{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .toc ol{margin:8px 0 0;padding-left:20px}
+  .toc a{text-decoration:none}
+  /* ---------- figures ---------- */
+  figure{margin:30px 0;text-align:center}
+  figure img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
+  figcaption{color:var(--muted);font-size:14px;margin-top:10px;text-align:left;line-height:1.5}
+  figcaption .takeaway{display:block;margin-top:5px;color:var(--ink);font-size:14px}
+  figcaption .takeaway::before{content:"Takeaway — ";font-weight:700;color:var(--accent)}
+  /* ---------- tables ---------- */
+  .tablewrap{overflow-x:auto;margin:22px 0}
+  table{border-collapse:collapse;width:100%;font-size:15px}
+  caption{caption-side:top;text-align:left;font-size:14px;color:var(--muted);margin-bottom:8px;padding:0}
+  th,td{border-bottom:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+  th{background:#f4f7fb;font-weight:700;white-space:nowrap}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  .hl-row{background:#f7fbfe}
+  .foot{margin-top:8px;font-size:13.5px;color:var(--muted)}
+  /* ---------- callouts ---------- */
+  .callout{border:1px solid var(--line);border-left:4px solid var(--hl);background:#fffdf6;border-radius:0 8px 8px 0;padding:16px 20px;margin:22px 0}
+  .callout code{background:#f0f1f3;padding:1px 6px;border-radius:4px;font-size:.9em}
+  kbd,code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace}
+  /* ---------- definition boxes ---------- */
+  .def{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;margin:16px 0;overflow:hidden}
+  .def div{padding:14px 20px;flex:1 1 320px}
+  .def .k{background:#f4f7fb;flex:0 1 260px;font-size:14px}
+  .def .k b{font-size:15px}
+  .def .k code{font-size:13px}
+  .def .v{background:#fff}
+  .def .v p{margin:2px 0}
+  /* ---------- footer ---------- */
+  footer{max-width:860px;margin:36px auto 60px;padding:0 20px}
+  .credit{border-top:1px solid var(--line);padding-top:18px;font-size:14.5px;color:var(--muted)}
+  .credit p{margin:6px 0}
+  ::selection{background:#cfe3f5}
+  .note{font-size:13.5px;color:var(--muted);font-style:italic}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <p class="eyebrow">Applied Search Intelligence · Capstone Research Paper</p>
+    <h1>Which Pages Should a Content Team Refresh First?</h1>
+    <p class="subtitle">A leakage-audited ranking study on 78.8 million rows of production search-performance data. A readable rule beats the learned model at top-K picks; validation design — not model choice — decides which numbers are real.</p>
+    <p class="byline">by <strong>David Akindele</strong> · ML Internship Capstone · built in the open at
+      <a href="https://github.com/the-akindele/Assignment-1">github.com/the-akindele/Assignment-1</a></p>
+    <div class="links">
+      <a class="btn" href="https://github.com/the-akindele/Assignment-1" target="_blank" rel="noopener">Repository</a>
+      <a class="btn" href="https://github.com/the-akindele/Assignment-1/tree/main/work/notebooks" target="_blank" rel="noopener">Notebooks</a>
+      <a class="btn" href="https://huggingface.co/datasets/FlyRank/internship-warehouse" target="_blank" rel="noopener">Data (gated)</a>
+      <a class="btn" href="#reproducibility" target="_blank">How to rerun</a>
+    </div>
+  </div>
+</header>
+
+<main class="paper" id="top">
+
+  <div class="stats">
+    <div class="stat"><b>78.8M</b><span>daily performance rows in the underlying release</span></div>
+    <div class="stat"><b>108,254</b><span>eligible pages scored at one decision date</span></div>
+    <div class="stat"><b>67%</b><span>base decline rate — the bar every metric must clear</span></div>
+    <div class="stat"><b>12,930</b><span>pages the rule flags (aimed at a ~20-page/week budget)</span></div>
+  </div>
+
+  <div class="toc">
+    <b>Sections</b>
+    <ol>
+      <li><a href="#s1">Abstract</a></li>
+      <li><a href="#s2">Introduction &amp; the decision this supports</a></li>
+      <li><a href="#s3">Data — what I used and why I excluded the rest</a></li>
+      <li><a href="#s4">Methodology — assumptions, features, label, baseline, validation, leakage checks</a></li>
+      <li><a href="#s5">Results — model vs baseline on the same split</a></li>
+      <li><a href="#s6">Limitations &amp; honest framing</a></li>
+      <li><a href="#s7">Ranked recommendations — the action playbook</a></li>
+      <li><a href="#s8">Reproducibility</a></li>
+      <li><a href="#s9">Acknowledgments &amp; data credit</a></li>
+    </ol>
+  </div>
+
+  <h2 class="sec" id="s1"><span class="n">1</span>Abstract</h2>
+  <div class="abstract">
+    <h2>Abstract</h2>
+    <p>Which pages should a content editor review first when the goal is to keep high-traffic content from losing search impressions?
+    On the FlyRank ML Internship dataset — 78.8 million rows of daily content-performance data across a pseudonymized portfolio, reduced to a single 30-day decision snapshot of 108,254 eligible pages — I labeled pages that lost more than 20% of their baseline impressions over the following 30 days (base rate 67%).
+    I built a transparent rule-based baseline (has traffic, is old, position slipping), a logistic regression, and a random forest, and evaluated all three on a client-held-out five-fold split using only features knowable at the decision date, with deliberate leakage probes.
+    The readable rule wins at top-K precision (0.73 vs 0.70 for the forest vs the 0.67 base rate at precision@20); the forest adds only modest ranking depth (ROC AUC 0.61 vs 0.54), while a naive split or a single future-window feature would have falsely claimed ~0.79–0.99 AUC.
+    The output is a ranked, reason-coded refresh queue an editor can act on today — and the finding that validation design, not model choice, is what decides whether a number is a result or a confession.</p>
+  </div>
+
+  <h2 class="sec" id="s2"><span class="n">2</span>Introduction / Problem statement</h2>
+  <p class="lede">One real scenario, then the principle.</p>
+
+  <p>An SEO editor at a content operation has a fixed weekly budget — say 20 pages — to review for refresh. Their portfolio is a few thousand live pages,
+  and every week a visible page is steadily losing impressions. The wrong call is asymmetric: choosing a page that would not have moved costs an editor's
+  hours (recoverable), but skipping a page that keeps losing traffic answers to nothing until the loss is already visible in the next month's report.</p>
+
+  <p><strong>The decision this work supports:</strong> which page should a content editor <em>look at first</em>. The unit of analysis is one page at one
+  decision date. The output is a ranked queue — pages ordered by how strongly the evidence says they need attention, each carrying a machine-readable
+  reason code a human can inspect before touching anything. This queue only decides <em>order</em>; the human still makes the edit decision.</p>
+
+  <p>Why does data/ML help here at all? Because the queue is built from the search signals we actually observe for a page — its traffic level, its average
+  search position, its age and freshness, its content descriptors — and we can measure, on a held-out set, how often "ranked first" really means "declined next window".
+  That measurement is the whole paper.</p>
+
+  <p>The narrative arc is honest, and worth stating up front. The obvious move is to train a model on everything you know about a page. But when the model
+  is judged the way the editor actually uses the output — by how the <em>top of the ranked list</em> performs, on clients it was never trained on — the
+  transparent three-condition rule beats it. And it is almost trivially easy to fool yourself: one future-window feature, or one naive random split, turns
+  a modest model into a 0.99-AUC "miracle". The tension this paper lives in is that gap between what feels brilliant and what survives.</p>
+
+  <h2 class="sec" id="s3"><span class="n">3</span>Data</h2>
+  <p class="lede">Which release, which tables, date windows, and what I excluded and why. Everything here is public-safe: no client names, URLs, titles, domains, or raw queries appear anywhere in this work.</p>
+
+  <p>The work is built on the <strong>FlyRank ML Internship dataset</strong> — the full warehouse release
+  (<code>FlyRank/internship-warehouse</code>, build <strong>v20260703</strong>, hosted on Hugging Face, gated). It is an anonymized, pseudonymous
+  content-performance panel: hashed client/content IDs with daily search and engagement metrics, plus content metadata. No titles, URLs, domains,
+  keywords, or raw queries are used as features anywhere.</p>
+
+  <div class="tablewrap">
+  <table>
+    <caption>Release tables used and their verified row counts (build v20260703)</caption>
+    <thead><tr><th>Table</th><th class="num">Rows</th><th>Role in this study</th></tr></thead>
+    <tbody>
+      <tr><td><code>fact_content_daily_performance</code></td><td class="num">78,835,655</td><td>Daily per-page search metrics — the source of all window features and the label</td></tr>
+      <tr><td><code>dim_content</code></td><td class="num">519,606</td><td>Static content descriptors (length, type, intent, standing metadata)</td></tr>
+      <tr><td><code>dim_clients</code></td><td class="num">104</td><td>Grouping key for the client-held-out split (never a feature)</td></tr>
+      <tr><td><code>fact_content_query_90d</code></td><td class="num">2,414,248</td><td><strong>Excluded wholesale</strong> — see below</td></tr>
+      <tr><td><code>fact_content_daily_performance_sample</code></td><td class="num">11,694,072</td><td><strong>Not used</strong> — a one-month (June 2026) slice; cannot support windowed work</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Date windows</h3>
+  <ul>
+    <li><strong>Panel:</strong> 2025-01-27 → 2026-06-30 (the release's daily fact coverage).</li>
+    <li><strong>Decision date t:</strong> <code>2026-05-31</code> = <code>MAX(report_date) − 30 days</code>. Every feature is knowable at or before <code>t</code>.</li>
+    <li><strong>Baseline window B:</strong> (2026-05-01, 2026-05-31] — features live here.</li>
+    <li><strong>Forward window F:</strong> (2026-05-31, 2026-06-30] — the label is measured here, never read as a feature.</li>
+  </ul>
+
+  <h3>Eligibility — who got scored</h3>
+  <p>Of 409,326 pages with rows in B or F, the analysis scores the <strong>108,254 eligible pages</strong> that had
+  <code>impressions ≥ 100</code> in B <em>and</em> ≥ 15 days of Google Search Console coverage in B. This is intentionally strict: pages too small or too
+  thinly observed to measure a change reliably are not ranked. Eligibility is per-page (each client's history depth differs), never a global calendar.</p>
+
+  <p>Four data defects were found and handled before modeling (each measured, not assumed):</p>
+  <ul>
+    <li><strong>June ships duplicated</strong> — 6,390 exact duplicate groups (0.05% of June rows), identical in the sample slice; collapse-to-grain happens before any aggregation.</li>
+    <li><strong>GA4 engagement columns are zero-filled, not absent</strong> — ~74% of June rows are flagged off the GA4 availability flag and average exactly 0 pageviews; the whole <code>ga4_*</code>/<code>sessions_*</code>/<code>ai_*</code>/<code>scroll_events</code> family was excluded.</li>
+    <li><strong>Unbalanced panel</strong> — 37 of 104 clients have no GSC anchor date at all and some cannot support window B at <code>t</code>; hence per-page eligibility.</li>
+    <li><strong>Freshness timestamps approximate</strong> — <code>content_updated_date</code> is release-build state, used directionally only.</li>
+  </ul>
+
+  <h3>What I deliberately excluded, and why</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Excluded</th><th>Why (one line)</th></tr></thead>
+    <tbody>
+      <tr><td><code>fact_content_query_90d</code> (whole table)</td><td>Its fixed 90-day window becomes future-contaminated at this <code>t</code> — it literally contains the forward window this cycle</td></tr>
+      <tr><td><code>imp_f</code>/any F-derived aggregate</td><td>It <em>is</em> the label's numerator — adding it is the classic leakage trap (shown in §4)</td></tr>
+      <tr><td><code>ga4_*</code>, <code>sessions_*</code>, <code>ai_*</code>, <code>scroll_events</code></td><td>Zero-filled outside GA4 availability (~74% off) — filler, not "no engagement"</td></tr>
+      <tr><td><code>provider_used</code>, <code>model_used</code></td><td>Product-decision flags — circular (would relearn the old rule) and may carry non-anonymized labels (privacy); excluded on both principle and policy</td></tr>
+      <tr><td><code>last_optimized_date</code>, <code>optimization_eligible_date</code></td><td>Product-workflow timestamps, release-time state</td></tr>
+      <tr><td><code>keyword_hash_id</code>, <code>url_hash_id</code></td><td>High-cardinality IDs with nothing generalizable</td></tr>
+      <tr><td><code>client_hash_id</code>, <code>content_hash_id</code></td><td>Pseudonymous IDs — grouping/splitting <em>only</em>, never features</td></tr>
+      <tr><td><code>is_deleted</code>, <code>is_published</code></td><td>Population filters, not predictors</td></tr>
+      <tr><td>raw titles, URLs, domains, keywords</td><td>Not present in the warehouse solution — the release ships hashed and anonymized</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2 class="sec" id="s4"><span class="n">4</span>Methodology</h2>
+  <p class="lede">Assumptions, features, label definition, baseline, validation design, and the leakage checks that make the numbers trustworthy.</p>
+
+  <h3>Assumptions</h3>
+  <ul>
+    <li><strong>Snapshot, not series.</strong> One decision date <code>t</code>; the queue ranks <em>now</em> and says nothing about next quarter without a re-run. A monthly re-run against a fresh warehouse build is the whole operating model.</li>
+    <li><strong>Observability at t.</strong> A feature is legal if and only if it is knowable at or before <code>t</code>. Anything computed from F, or from a window that straddles <code>t</code>, is future information and can never be a feature.</li>
+    <li><strong>Association, not causation.</strong> No intervention variable exists in the data, so no claim here is causal — the honest claim is "these pages look worth reviewing first".</li>
+  </ul>
+
+  <h3>Label — one sentence</h3>
+  <div class="def">
+    <div class="k"><b>declined_30d</b><br><code>imp_f &lt; 0.8 × imp_b</code><br><span class="note">b = impressions in baseline window B · f = impressions in forward window F</span></div>
+    <div class="v"><p>A page is labeled "1" if its impressions 30 days after the decision point fall by <strong>more than 20%</strong> versus its baseline month (observed in the data, our cutoff by design). Base rate: <strong>67.4%</strong> of eligible pages.</p></div>
+  </div>
+
+  <h3>Features — 22, all B-window or static</h3>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Group</th><th>Features</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Traffic &amp; position (B)</td><td><code>imp_b</code>, <code>clk_b</code>, <code>ctr_b</code>, <code>gsc_days_b</code>, <code>pos_avg_b</code>, <code>pos_vol_b</code></td><td>Impressions, clicks, CTR, coverage days, mean and variance of search position</td></tr>
+      <tr><td>Content descriptors (static)</td><td><code>word_count</code>, <code>char_count</code>, <code>keyword_char_count</code>, <code>keyword_token_count</code>, <code>url_char_count</code>, <code>category_count</code>, <code>search_volume</code>, <code>backlinks</code></td><td>Missingness ~22–31%; each gets a companion <code>has_*</code> flag so imputation never sneaks in a category-only effect</td></tr>
+      <tr><td>Age &amp; freshness</td><td><code>age_days</code>, <code>days_since_update</code></td><td>Approximate — <code>updated</code> is release-build state</td></tr>
+      <tr><td>Categorical</td><td><code>content_type</code>, <code>main_intent</code>, <code>competition_level</code></td><td>Label-encoded; missing filled as "unknown"</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="note">Left out on purpose: <code>imp_f</code> and all F-derived aggregates (§3), the whole query table, product flags, GA4-family, and both hash-ID columns.</p>
+
+  <h3>Baseline — a rule a person can read</h3>
+  <p>Before any model, I froze a transparent, zero-weight rule that mirrors how an editor already triages (why it's fair: it uses the same eligible pages, the same label, and the same precision@K metric as the model):</p>
+  <div class="def">
+    <div class="k">
+      <b>flag = traffic × stale × slipping</b><br>
+      <code>has_traffic:</code> <code>imp_b ≥ 600</code><br>
+      <code>stale:</code> <code>age_days ≥ 180</code><br>
+      <code>position_slipping:</code> <code>pos_avg_b ≥ 12</code><br><br>
+      <b>score</b> <code>= flag × imp_b</code>
+    </div>
+    <div class="v"><p>"A page is worth refreshing first if it used to get real traffic, is getting old, and its average position is slipping — all three must fire, and volume then decides the order." Flags 12,930 pages (11.9% of eligible).</p></div>
+  </div>
+
+  <h3>Models</h3>
+  <ul>
+    <li><strong>Logistic regression</strong> — readable, coefficient-based; the classic baseline model.</li>
+    <li><strong>Random forest (300 trees)</strong> — chosen because the signal audit showed non-linear, banded effects (peak decline in the 6–12 month age band; an optimal word-length band) a linear boundary can miss.</li>
+    <li>Seed fixed at <strong>1</strong>; scikit-learn 1.8.0, pandas 3.0.3.</li>
+  </ul>
+
+  <h3>Validation design — grouped, not random</h3>
+  <p>I used <strong>GroupKFold (5 folds) grouped by client</strong>, because the leakage hunt (§w03/w06 notebooks) proved a random split overstates skill by ~0.09 AUC: rows from the same client share hidden character, so a random split partially memorizes clients. The grouped split measures the case that matters in production — a client the model was <em>never trained on</em>. Time-awareness is enforced by construction: features come from B (≤ t), label from F (&gt; t). The baseline's frozen score is recomputed on the same test rows each fold.</p>
+
+  <h3>Leakage checks — the confession test</h3>
+  <p>The strongest test runs the <em>same</em> model three ways: legal features, then each suspected leak added, and watches the score move. A near-perfect score is the signature of leakage, not a win.</p>
+
+  <div class="tablewrap">
+  <table>
+    <caption>Leakage probes — legal set first, then each candidate leak added (logistic regression; base rate 0.67 printed beside every metric)</caption>
+    <thead><tr><th>Configuration</th><th class="num">ROC AUC</th><th class="num">Avg precision</th><th>Reading</th></tr></thead>
+    <tbody>
+      <tr><td><code>imp_f</code> added (the label's own input)</td><td class="num">0.998</td><td class="num">0.924</td><td>Uses F → future information; "≈1.0" is the confession</td></tr>
+      <tr><td>future-window stand-in signal</td><td class="num">0.873</td><td class="num">0.865</td><td>Any query-table-style forward signal inflates the score</td></tr>
+      <tr><td><code>provider_used</code>/<code>model_used</code> added</td><td class="num">0.652</td><td class="num">0.692</td><td>Marginal gain, circular + privacy risk → excluded</td></tr>
+      <tr class="hl-row"><td><strong>Legal set (B-only), random split</strong></td><td class="num">0.632</td><td class="num">0.686</td><td>Barely above chance — honest and unimpressive</td></tr>
+      <tr class="hl-row"><td><strong>Legal set, grouped by client</strong></td><td class="num">0.539</td><td class="num">0.676</td><td>The ~0.09 AUC drop <em>is</em> the memorization finding</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <figure>
+    <img src="charts/validation_choice_auc.png" alt="Bar chart: the same random forest at 0.79 AUC under a naive random split, 0.615 under an honest client-grouped split, and 0.991 with a forward-window feature added.">
+    <figcaption>
+      <strong>Figure 1.</strong> The same random forest, three validation designs — 300 trees, seed 1, identical legal feature set otherwise.
+      The naive split flatters (0.79), the honest client-grouped split is modest (0.615), and one future-window feature collapses honesty into a 0.99-AUC artifact.
+      <span class="takeaway">Near-perfect scores in this setting are a leakage confession, not a result — validation design is the claim.</span>
+    </figcaption>
+  </figure>
+
+  <h2 class="sec" id="s5"><span class="n">5</span>Results — model vs baseline on the same split</h2>
+  <p class="lede">Everyone is judged on the same five client-grouped folds, against a 67% base rate, on precision@K (how the editor uses the queue) and ROC AUC (ranking depth).</p>
+
+  <div class="tablewrap">
+  <table>
+    <caption>Honest comparison — mean over 5 client-grouped folds (ground truth: <code>declined_30d</code> in the forward window)</caption>
+    <thead><tr><th>Delivered by</th><th class="num">Precision@20</th><th class="num">Precision@50</th><th class="num">ROC AUC</th></tr></thead>
+    <tbody>
+      <tr><td>Base rate (no model at all)</td><td class="num">0.67</td><td class="num">0.67</td><td class="num">0.50 (chance)</td></tr>
+      <tr><td><strong>Baseline rule (transparent, §4)</strong></td><td class="num"><strong>0.73</strong></td><td class="num"><strong>0.73</strong></td><td class="num">—</td></tr>
+      <tr><td>Logistic regression</td><td class="num">0.65</td><td class="num">—</td><td class="num">0.54</td></tr>
+      <tr class="hl-row"><td><strong>Random forest</strong></td><td class="num">0.70</td><td class="num">—</td><td class="num">0.61</td></tr>
+    </tbody>
+  </table>
+  <p class="foot">The honest, reproducible numbers on new clients: the learned model does <em>not</em> clear the transparent baseline at top-K. The forest's only clear edge is ranking depth. A confirmatory re-run of the forest alone (notebook w06) lands at precision@20 0.74, AUC 0.62.</p>
+  </div>
+
+  <figure>
+    <img src="charts/model_vs_baseline_precision.png" alt="Bar chart: precision at 20 on the same client-grouped split — base rate 0.67, baseline rule 0.73, logistic regression 0.65, random forest 0.70.">
+    <figcaption>
+      <strong>Figure 2.</strong> Precision@20 on the same client-grouped split.
+      <span class="takeaway">The zero-weight readable rule beats both learned models at the top of the list the editor actually uses — 0.73 vs 0.70 vs 0.65, all against a 0.67 base rate.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <img src="charts/model_vs_baseline_auc.png" alt="Bar chart: ROC AUC on the same split — logistic regression 0.538, random forest 0.614, chance at 0.5.">
+    <figcaption>
+      <strong>Figure 3.</strong> Ranking depth on the same split.
+      <span class="takeaway">The forest is a better <em>ranker</em> than the linear model (0.61 vs 0.54 AUC) — useful for the mid-list — but both are modest against a 67% base rate.</span>
+    </figcaption>
+  </figure>
+
+  <h3>Error analysis — the misses are shared and informative</h3>
+  <ul>
+    <li><strong>Both the rule and the model over-weight raw traffic.</strong> The clearest top-20 misses are high-traffic (60k–120k impressions/month), old, off-page-1 pages that <em>held steady</em> — big pages can stay flat despite weak position.</li>
+    <li><strong>Fold variance is high.</strong> Precision@20 for the baseline ranges 0.35–0.95 across folds because each test fold holds only ~5–8 clients; the mean table matters more than any single fold, and new-client generalization is the weakest case by design.</li>
+    <li><strong>Linear underfits.</strong> Logistic regression scores ~0.54 AUC because the signal audit found banded, non-linear effects (peak decline at 6–12 months; optimal word band ~2–3.5k); the forest captures the depth.</li>
+  </ul>
+
+  <h3>The playbook, on its own terms (in-sample, full eligible population)</h3>
+  <p>For deployment I kept the readable rule as the working triage tool and measured it the way an operator uses it — ranked precision@K over the full eligible population. Its in-sample numbers are strong but must never be quoted without their honest, client-held-out counterparts below them.</p>
+
+  <div class="tablewrap">
+  <table>
+    <caption>Ranked-queue precision@K, full eligible population (12,930 pages flagged) — in-sample. The held-out numbers are Figure 2.</caption>
+    <thead><tr><th class="num">K</th><th class="num">10</th><th class="num">20</th><th class="num">50</th><th class="num">100</th><th class="num">200</th><th class="num">500</th></tr></thead>
+    <tbody>
+      <tr><td>Precision (rule)</td><td class="num">0.85</td><td class="num">0.85</td><td class="num">0.78</td><td class="num">0.81</td><td class="num">0.78</td><td class="num">0.77</td></tr>
+      <tr><td>vs base rate 0.674</td><td class="num">1.26×</td><td class="num">1.26×</td><td class="num">1.16×</td><td class="num">1.20×</td><td class="num">1.15×</td><td class="num">1.14×</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <figure>
+    <img src="charts/playbook_precision_at_k.png" alt="Line chart: ranked-queue precision at K from 10 to 500 for the readable rule, versus the 0.67 base rate line.">
+    <figcaption>
+      <strong>Figure 4.</strong> Ranked-queue precision@K vs base rate (rule, full eligible population; 12,930 flagged pages).
+      <span class="takeaway">Consistent ~1.14–1.26× lift over the 67% base rate across K — the rule concentrates decline-association in the top of the queue.</span>
+    </figcaption>
+  </figure>
+
+  <figure>
+    <img src="charts/playbook_reason_codes.png" alt="Bar chart: pages flagged by reason code for the ranked refresh queue.">
+    <figcaption>
+      <strong>Figure 5.</strong> What the rule flags, by reason code (ranked queue, score &gt; 0).
+      <span class="takeaway">Nearly every flagged page is "traffic + old + off page 1" — the reason string is the machine-readable twin of the plain-language recommendation.</span>
+    </figcaption>
+  </figure>
+
+  <h2 class="sec" id="s6"><span class="n">6</span>Limitations &amp; honest framing</h2>
+  <p class="lede">What this work cannot claim — written here before a reader has to.</p>
+
+  <ul>
+    <li><strong>Ranks, not causes.</strong> No experiment or intervention variable exists in the data. Nothing here claims that editing or refreshing a page <em>will</em> restore its rankings — the honest form is "these pages look worth an editor reviewing first."</li>
+    <li><strong>One snapshot.</strong> Every score is knowable at <code>t = 2026-05-31</code>. It ranks that moment; it says nothing about next quarter unless re-run.</li>
+    <li><strong>New-client generalization is the weakest case.</strong> The client-grouped AUC (~0.61) is measurably below the random-split mirage (0.79) — a client the model never saw is hard.</li>
+    <li><strong>~88% of pages fall outside the rule.</strong> Only 12,930 of 108,254 eligible pages are flagged. Unflagged (<code>low_signals</code>, n=9,342) means "off the rule", not "no opportunity" — a young rising page can sit there and must not be auto-prioritized.</li>
+    <li><strong>Misses exist.</strong> Even in the top 20, ~15% of in-sample picks held steady — mostly huge old pages off page 1. Only a person can separate those from true declines.</li>
+    <li><strong>Thresholds are settings, not laws.</strong> The 600 / 180 / 12 rule thresholds are read off this data period; a different portfolio can shift them. The warehouse build's duplication, GA4 zero-fill, and unbalanced panel are handled here but must be re-checked on every new build.</li>
+    <li><strong>Censoring inflates the label.</strong> Pages deleted inside the forward window score as declines (both raw and active-only rates are 67.4% here — one page out of 108,254 was deleted, so the effect is minimal in this snapshot but real in general).</li>
+    <li><strong>Cross-sections can't prove lifecycle.</strong> The related FlyRank research (a 341,701-piece cross-section across 57 brands) shows growing pages were longer and younger, and content peaks at 61–90 days before a decay cliff at 271–365 days — I replicated the direction of those associations on this holdout but the selection confound (teams refresh pages they expect to win) is unresolved in both.</li>
+    <li><strong>No per-client calibration, no real-time retraining</strong> — this is a frozen, auditable artifact, deliberately not a live score in production.</li>
+  </ul>
+
+  <div class="callout">
+    <strong>The one sentence that carries the whole paper.</strong> On a client-grouped holdout, the rule and the random forest <em>rank</em> likely-decliners at
+    precision@20 0.73 / 0.70 against a 0.67 base rate (AUC ~0.61); in this snapshot, pages off page one and pages in the 6–12 month age band <em>showed</em>
+    higher decline; these pages therefore <em>look worth an editor reviewing first</em>. Observed, measured, and decision-support. Nothing here was designed to prove
+    that editing a page improves its ranking, and it does not.
+  </div>
+
+  <h2 class="sec" id="s7"><span class="n">7</span>Ranked recommendations — the action playbook</h2>
+  <p class="lede">What a FlyRank content editor does tomorrow.</p>
+
+  <ol>
+    <li><strong>Run the transparent rule as the working triage tool — and verify each pick by hand.</strong>
+      It both wins top-K precision (0.73 held-out, 0.85 in-sample) and is explainable: every row carries a reason string ("refresh first — earns real traffic, old, off page-1"). Use the 5-point pre-edit checklist per pick: is it live and indexable? was it <em>already</em> refreshed in the last ~30 days (90,484 pages were — don't double-edit)? is the position reading real? does the demand the impressions imply still exist? are we allowed/planning to touch it?</li>
+    <li><strong>Use the random forest for the <em>middle</em> of the queue, not the top.</strong>
+      Its edge is ranking depth (AUC 0.61 vs 0.54), so let it inform ordering below the top-20 where the rule is strong; never let an unread top pick pass.</li>
+    <li><strong>Watch the documented blind spots.</strong>
+      18 pages are flagged <em>and</em> very high traffic (≥60k impressions) — verify each one personally; high-traffic old pages can stay flat, and the ~15% of in-sample top-20 "misses" are exactly that type.</li>
+    <li><strong>Never automate the wrong actions.</strong> No auto-publish, no auto-rewrite, no auto-delete off this score. <code>declined</code> means "impressions dropped next window", not "remove this page". <code>low_signals</code> pages are off the rule, not no-value.</li>
+    <li><strong>Re-run monthly against a fresh warehouse build.</strong> The whole playbook is a re-run, not a set-it-and-forget model: a new build shifts the windows and the label, so every number here is tied to one build. Re-check base-rate drift (~0.67), held-out precision (~0.74 floor), and the duplication/GA4 guards each time.</li>
+    <li><strong>Treat thresholds as settings, and tune them on your portfolio, not the recipe book.</strong> 600 / 180 / 12 were read off this data period.</li>
+    <li><strong>Close the causal gap deliberately.</strong> The next step worth taking is the one design this snapshot cannot provide: a randomized or matched evaluation of refresh edits (or a held-out page-by-page A/B) so "worth reviewing" can become "this action produced this outcome" for real.</li>
+  </ol>
+
+  <p class="note">Confidence: high on the ranking claim (holdout-measured), deliberately low on any outcome claim for the edits themselves (no experiment was run).</p>
+
+  <h2 class="sec" id="s8"><span class="n">8</span>Reproducibility</h2>
+  <p class="lede">Anyone with the repo can re-run or inspect every number. The warehouse is gated; everything else is public.</p>
+
+  <ul>
+    <li><strong>Repository:</strong> <a href="https://github.com/the-akindele/Assignment-1" target="_blank" rel="noopener">github.com/the-akindele/Assignment-1</a> — this page's source lives in <code>docs/</code>.</li>
+    <li><strong>Notebooks (the paper, section by section):</strong></li>
+  </ul>
+  <div class="tablewrap">
+  <table>
+    <thead><tr><th>Notebook</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td><a href="https://github.com/the-akindele/Assignment-1/blob/main/work/notebooks/w01_research_question.ipynb" target="_blank" rel="noopener">w01_research_question.ipynb</a></td><td>Research question, decision, cost of a wrong call</td></tr>
+      <tr><td><a href="https://github.com/the-akindele/Assignment-1/blob/main/work/notebooks/w02_ml_task_framing.ipynb" target="_blank" rel="noopener">w02_ml_task_framing.ipynb</a></td><td>Task framing: ranking, unit of analysis, precision@K</td></tr>
+      <tr><td><a href="https://github.com/the-akindele/Assignment-1/blob/main/work/notebooks/w03_data_contract.ipynb" target="_blank" rel="noopener">w03_data_contract.ipynb</a></td><td>Data contract, tables, windows, defects, exclusions</td></tr>
+      <tr><td><a href="https://github.com/the-akindele/Assignment-1/blob/main/work/notebooks/w03_feature_leakage_check.ipynb" target="_blank" rel="noopener">w03_feature_leakage_check.ipynb</a></td><td>Feature vector (22 cols) + leakage probes (§4 here)</td></tr>
+      <tr><td><a href="https://github.com/the-akindele/Assignment-1/blob/main/work/notebooks/w04_signal_audit.ipynb" target="_blank" rel="noopener">w04_signal_audit.ipynb</a></td><td>Signal tests: age band, position, word length</td></tr>
+      <tr><td><a href="https://github.com/the-akindele/Assignment-1/blob/main/work/notebooks/w04_baseline_score.ipynb" target="_blank" rel="noopener">w04_baseline_score.ipynb</a></td><td>The transparent rule, in-sample precision@K</td></tr>
+      <tr><td><a href="https://github.com/the-akindele/Assignment-1/blob/main/work/notebooks/w05_model.ipynb" target="_blank" rel="noopener">w05_model.ipynb</a></td><td>Models vs baseline on the same grouped split (§5 table)</td></tr>
+      <tr><td><a href="https://github.com/the-akindele/Assignment-1/blob/main/work/notebooks/w06_validation_audit.ipynb" target="_blank" rel="noopener">w06_validation_audit.ipynb</a></td><td>Before/after/trap validation + research-claim audit</td></tr>
+      <tr><td><a href="https://github.com/the-akindele/Assignment-1/blob/main/work/notebooks/w07_action_playbook.ipynb" target="_blank" rel="noopener">w07_action_playbook.ipynb</a></td><td>The ranked action playbook and its precision@K (§7)</td></tr>
+      <tr><td><a href="https://github.com/the-akindele/Assignment-1/blob/main/work/notebooks/capstone.ipynb" target="_blank" rel="noopener">capstone.ipynb</a></td><td>Capstone — mirrors this paper</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <ul>
+    <li><strong>Reference pipeline:</strong> <code>scripts/run_all.py</code> (prepare → baseline → train → evaluate → PDF) runs end-to-end on the bundled anonymized starter slice (<code>data/raw/content_refresh_anonymized.csv</code>, 30,000 pages).</li>
+    <li><strong>Full release:</strong> queried remotely via DuckDB against the gated <a href="https://huggingface.co/datasets/FlyRank/internship-warehouse" target="_blank" rel="noopener">FlyRank/internship-warehouse</a> (<code>work/scripts/hf_query.py</code>); not committed. 108,254 eligible pages at <code>t</code> per the eligibility rule in §3.</li>
+    <li><strong>Reproducibility pins:</strong> seed 1; scikit-learn 1.8.0, pandas 3.0.3; results stable within a few points across library versions. Cloud AI was used for drafting; every number above is a measured notebook output, and all claims were run through the observed → measured → validated-holdout → decision-support claim ladder.</li>
+  </ul>
+
+  <h2 class="sec" id="s9"><span class="n">9</span>Acknowledgments &amp; data credit</h2>
+  <p>This work would not exist without the data it is built on. All analysis used the <strong>anonymized, pseudonymized</strong> release provided to
+  interns by <strong>FlyRank</strong> — hashed identifiers only, no client names, URLs, titles, domains, or raw queries, under the terms of the repo's
+  <a href="https://github.com/the-akindele/Assignment-1/blob/main/DATA_USE.md" target="_blank" rel="noopener">data-use policy</a>.</p>
+
+  <p class="credit">
+    <strong>Built on the <a href="https://flyrank.ai" target="_blank" rel="noopener">FlyRank</a> ML Internship dataset</strong> —
+    78,835,655 daily content-performance rows, build <em>v20260703</em>, via the gated
+    <a href="https://huggingface.co/datasets/FlyRank/internship-warehouse" target="_blank" rel="noopener">FlyRank/internship-warehouse</a> release.
+    Thanks to the FlyRank ML internship team (Mirza Ašćerić, ML track; Hole, data engineering) for the release, the lane guide, and the workflow this
+    paper runs on. Code is open under the repository's MIT licence; the data is used under the internship's data-use terms.
+  </p>
+
+</main>
+
+<footer>
+  <div class="credit">
+    <p><strong>Public-safety statement.</strong> This page contains aggregates only: no client names, no URLs, no page titles, no keywords, no raw queries, and no row-level
+    data dumps. Claims are framed as observed / measured / decision-support; nothing here claims to predict or prove any search-engine algorithm.</p>
+    <p>David Akindele · FlyRank ML Internship capstone · 2026 · <a href="https://github.com/the-akindele/Assignment-1" target="_blank" rel="noopener">repository</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

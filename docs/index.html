@@ -156,7 +156,7 @@
   <h2 class="sec" id="s1"><span class="n">1</span>Abstract</h2>
   <div class="abstract">
     <span class="abstract-label">Abstract</span>
-    <p>Which pages should a content editor review first when the goal is to keep high-traffic content from losing search impressions?
+    <p>Which pages should a content editor review first when the goal is to keep high-traffic content from losing search impressions? That decision — what to refresh first under a fixed weekly budget — is the FlyRank content problem this case study answers, retold in public-safe language.
     On the FlyRank ML Internship dataset — 78.8 million rows of daily content-performance data across a pseudonymized portfolio, reduced to a single 30-day decision snapshot of 108,254 eligible pages — I labeled pages that lost more than 20% of their baseline impressions over the following 30 days (base rate 67%).
     I built a transparent rule-based baseline (has traffic, is old, position slipping), a logistic regression, and a random forest, and evaluated all three on a client-held-out five-fold split using only features knowable at the decision date, with deliberate leakage probes.
     The readable rule wins at top-K precision (0.73 vs 0.70 for the forest vs the 0.67 base rate at precision@20); the forest adds only modest ranking depth (ROC AUC 0.61 vs 0.54), while a naive split or a single future-window feature would have falsely claimed ~0.79–0.99 AUC.
@@ -168,7 +168,8 @@
 
   <p>An SEO editor at a content operation has a fixed weekly budget — say 20 pages — to review for refresh. Their portfolio is a few thousand live pages,
   and every week a visible page is steadily losing impressions. The wrong call is asymmetric: choosing a page that would not have moved costs an editor's
-  hours (recoverable), but skipping a page that keeps losing traffic answers to nothing until the loss is already visible in the next month's report.</p>
+  hours (recoverable), but skipping a page that keeps losing traffic answers to nothing until the loss is already visible in the next month's report.
+  This scenario is the case study: it is the content-refresh problem the FlyRank lane runs on, retold here without any client-identifying detail.</p>
 
   <p><strong>The decision this work supports:</strong> which page should a content editor <em>look at first</em>. The unit of analysis is one page at one
   decision date. The output is a ranked queue — pages ordered by how strongly the evidence says they need attention, each carrying a machine-readable
